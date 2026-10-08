@@ -1,0 +1,107 @@
+from flask import Flask, request, render_template_string
+import re
+
+app = Flask(__name__)
+
+HTML = """
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>جستجوی اطلاعات شماره</title>
+<style>
+body{
+    font-family:Tahoma;
+    background:#f2f2f2;
+    padding:20px;
+}
+.box{
+    max-width:500px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:15px;
+}
+input,button{
+    width:100%;
+    padding:14px;
+    margin-top:10px;
+    box-sizing:border-box;
+    border-radius:8px;
+}
+button{
+    background:#111;
+    color:white;
+    border:0;
+}
+.result{
+    margin-top:20px;
+    line-height:2;
+}
+</style>
+</head>
+
+<body>
+<div class="box">
+
+<h2>🔎 جستجوی شماره تلفن</h2>
+
+<form method="post">
+<input
+name="phone"
+placeholder="+98918810784"
+required>
+<button>جستجو</button>
+</form>
+
+{% if result %}
+<div class="result">
+{{ result|safe }}
+</div>
+{% endif %}
+
+</div>
+</body>
+</html>
+"""
+
+def check_phone(phone):
+
+    phone = phone.strip()
+
+    # فقط بررسی اولیه شماره
+    clean = re.sub(r"[^\d+]", "", phone)
+
+    if not clean.startswith("+"):
+        return "⚠️ شماره را با کد کشور وارد کنید.<br>مثال: +98918810784"
+
+    if len(clean) < 8:
+        return "❌ شماره کوتاه یا نامعتبر است."
+
+    return f"""
+    ✅ شماره دریافت شد<br>
+    📱 شماره: {clean}<br>
+    🌍 برای دریافت اطلاعات عمومی بیشتر،
+    باید سرویس قانونی Lookup به این ربات متصل شود.
+    """
+
+@app.route("/", methods=["GET","POST"])
+def home():
+
+    result = ""
+
+    if request.method == "POST":
+        phone = request.form.get("phone","")
+        result = check_phone(phone)
+
+    return render_template_string(
+        HTML,
+        result=result
+    )
+
+if __name__ == "__main__":
+    app.run(
+        host="0.0.0.0",
+        port=5000
+    )
